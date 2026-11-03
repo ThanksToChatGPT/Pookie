@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <!-- Viewport optimizado para Safari en iOS: 100dvh, sin zoom por doble toque -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#dc0a2d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Pokédex - Entrada #021: Pookie</title>
+
+  <!-- Fuentes Retro de Google Fonts: 'Press Start 2P' y 'VT323' -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+  <!-- Confetti Canvas CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* ==========================================================================
+       RESET Y VARIABLES ESTILO GAME BOY / GBA (MOBILE-FIRST)
+       ========================================================================== */
+    :root {
+      --pokedex-red: #d30a2a;
+      --pokedex-dark-red: #890014;
+      --pokedex-light-red: #ff3855;
+      --pokedex-lens: #29b6f6;
+      --pokedex-shadow: #52000c;
+
+      --lcd-bg: #eaf3e5;
+      --lcd-border: #798b74;
+      --lcd-text: #112215;
+      --lcd-subtext: #2f4e35;
+
+      --font-pixel: 'Press Start 2P', monospace;
+      --font-retro: 'VT323', monospace;
+
+      --box-border: #1e293b;
+      --box-bg: #ffffff;
+      --box-shadow: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      min-height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
+      background-color: #0b0d10;
+      font-family: var(--font-pixel);
+      color: var(--lcd-text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overscroll-behavior: none;
+    }
+
+    /* ==========================================================================
+       CHASIS PRINCIPAL DE LA POKÉDEX (ADAPTADO A iPHONE 100dvh)
+       ========================================================================== */
+    .pokedex-app {
+      width: 100%;
+      max-width: 440px;
+      height: 100dvh;
+      background: linear-gradient(150deg, var(--pokedex-light-red) 0%, var(--pokedex-red) 45%, var(--pokedex-dark-red) 100%);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0,0,0,0.8);
+      padding-top: max(8px, env(safe-area-inset-top));
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      padding-left: max(10px, env(safe-area-inset-left));
+      padding-right: max(10px, env(safe-area-inset-right));
+      border-radius: 0;
+    }
+
+    @media (min-width: 441px) {
+      .pokedex-app {
+        height: min(94dvh, 880px);
+        border-radius: 28px;
+        border: 4px solid #4a000a;
+      }
+    }
+
+    /* Barra Superior de Sensores (Sin botón de mute visual) */
+    .pokedex-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 8px 8px 8px;
+      border-bottom: 3.5px solid var(--pokedex-dark-red);
+      flex-shrink: 0;
+    }
+
+    .sensors-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Gran Lente Azul */
+    .big-lens {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--pokedex-lens) 35%, #0277bd 75%, #002f6c 100%);
+      border: 3.5px solid #ffffff;
+      box-shadow: 0 0 10px rgba(41, 182, 246, 0.8), inset 0 2px 4px rgba(0,0,0,0.4);
+      animation: lensGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes lensGlow {
+      0% { box-shadow: 0 0 6px rgba(41, 182, 246, 0.6); }
+      100% { box-shadow: 0 0 14px rgba(41, 182, 246, 1); }
+    }
+
+    /* Luces mini RGB */
+    .mini-leds {
+      display: flex;
+      gap: 6px;
+    }
+
+    .led {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 1.5px solid #111;
+    }
+    .led-red {
+      background: radial-gradient(circle at 35% 35%, #ff8a80, #d50000);
+      box-shadow: 0 0 4px #ff1744;
+    }
+    .led-yellow {
+      background: radial-gradient(circle at 35% 35%, #ffff8d, #ffd600);
+      box-shadow: 0 0 4px #ffea00;
+    }
+    .led-green {
+      background: radial-gradient(circle at 35% 35%, #b9f6ca, #00c853);
+      box-shadow: 0 0 4px #00e676;
+    }
+
+    .pokedex-brand-label {
+      font-size: 8px;
+      color: #ffe4e6;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 0 #890014;
+    }
+
+    /* ==========================================================================
+       MARCO DE LA PANTALLA LCD
+       ========================================================================== */
+    .pokedex-screen-frame {
+      background: #dcdee2;
+      border-radius: 12px 12px 24px 12px;
+      padding: 8px 8px 10px 8px;
+      margin: 6px 0;
+      border: 3.5px solid #1b2028;
+      box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #8e95a0, 0 4px 10px rgba(0,0,0,0.35);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0; /* Imprescindible para flex scroll interno */
+      position: relative;
+    }
+
+    .screen-top-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 5px;
+    }
+
+    .bezel-dot {
+      width: 6px;
+      height: 6px;
+      background: #dc2626;
+      border-radius: 50%;
+      border: 1px solid #7f1d1d;
+    }
+
+    /* Pantalla LCD interna con scanlines retro */
+    .screen-lcd {
+      background-color: var(--lcd-bg);
+      border: 3px solid var(--lcd-border);
+      border-radius: 6px;
+      box-shadow: inset 2px 2px 5px rgba(0,0,0,0.18);
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 8px 7px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background-image: linear-gradient(rgba(0,0,0,0.025) 50%, rgba(255,255,255,0.025) 50%);
+      background-size: 100% 4px;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+
+    .screen-lcd::-webkit-scrollbar {
+      width: 4px;
+    }
+    .screen-lcd::-webkit-scrollbar-thumb {
+      background: var(--lcd-border);
+      border-radius: 4px;
+    }
+
+    /* Altavoces y luces inferiores del marco */
+    .screen-bottom-hardware {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 6px;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+    .red-indicator-light {
+      width: 10px;
+      height: 10px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 1.5px solid #991b1b;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+      animation: blinkRed 1.8s infinite;
+    }
+
+    @keyframes blinkRed {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .speaker-grill {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5px;
+    }
+    .speaker-line {
+      width: 30px;
+      height: 2.5px;
+      background: #475569;
+      border-radius: 2px;
+    }
+
+    /* ==========================================================================
+       GESTIÓN DE PANTALLAS
+       ========================================================================== */
+    .game-screen {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+
+    .game-screen.active {
+      display: flex;
+      animation: fadeInScreen 0.25s ease-out;
+    }
+
+    @keyframes fadeInScreen {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Flecha Titilante Clásica de Diálogo Pokémon (Prompt Arrow) */
+    .prompt-arrow {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 7px solid #dc2626;
+      animation: bouncePrompt 0.65s infinite ease-in-out;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    @keyframes bouncePrompt {
+      0%, 100% { transform: translateY(0); opacity: 1; }
+      50% { transform: translateY(3px); opacity: 0.3; }
+    }
+
+    /* ==========================================================================
+       PANTALLA 1: FICHA POKÉDEX (REGISTRO DE POOKIE)
+       ========================================================================== */
+    .pokedex-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2.5px dashed var(--lcd-border);
+      padding-bottom: 5px;
+      margin-bottom: 7px;
+    }
+
+    .pokedex-number {
+      font-size: 9.5px;
+      font-weight: bold;
+      color: #2c4a30;
+      letter-spacing: 0.5px;
+    }
+
+    .pokedex-name {
+      font-size: 12px;
+      font-weight: bold;
+      color: #0d2813;
+      text-transform: uppercase;
+      text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+    }
+
+    /* Fila de Sprite y Metadatos */
+    .sprite-and-meta-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+      margin-bottom: 8px;
+    }
+
+    /* Marco del Sprite retro */
+    .sprite-box {
+      width: 108px;
+      height: 108px;
+      background: #f8fafc;
+      border: 3px solid #1e293b;
+      border-radius: 6px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: inset 2px 2px 0 rgba(0,0,0,0.15), 2px 2px 0 #798b74;
+    }
+
+    .pookie-sprite-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    .level-badge {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      background: #0f172a;
+      color: #facc15;
+      font-size: 7.5px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      border: 1px solid #334155;
+    }
+
+    /* Metadatos */
+    .meta-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      background: rgba(255, 255, 255, 0.75);
+      padding: 5px 7px;
+      border-radius: 6px;
+      border: 2px solid var(--lcd-border);
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .meta-label {
+      font-size: 7px;
+      color: #4b6350;
+      text-transform: uppercase;
+    }
+
+    .meta-val {
+      font-size: 9px;
+      color: #112a15;
+      font-weight: bold;
+    }
+
+    .type-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 7px;
+      padding: 2.5px 5px;
+      border-radius: 4px;
+      width: fit-content;
+      margin-top: 1px;
+      border: 1px solid #5b21b6;
+    }
+
+    /* Tarjetas de Debilidades y Virtudes */
+    .retro-card {
+      background: #ffffff;
+      border: 2.5px solid #1e293b;
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-bottom: 7px;
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+    }
+
+    .card-title {
+      font-size: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+      padding-bottom: 3px;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+
+    .card-title.debilidad-title {
+      color: #b91c1c;
+    }
+
+    .card-title.virtud-title {
+      color: #047857;
+    }
+
+    .items-container {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .entry-item {
+      font-family: var(--font-retro);
+      font-size: 14.5px;
+      line-height: 1.25;
+      color: #1e293b;
+    }
+
+    .entry-item-title {
+      font-family: var(--font-pixel);
+      font-size: 7.5px;
+      color: #0f172a;
+      display: block;
+      margin-bottom: 1px;
+    }
+
+    /* Caja de Descripción de Pokédex */
+    .pokedex-description-card {
+      background: #ffffff;
+      border: 3px solid #1e293b;
+      border-radius: 6px;
+      padding: 7px 8px;
+      margin-bottom: 8px;
+      box-shadow: inset 1px 1px 2px rgba(0,0,0,0.06), 2px 2px 0 rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    .desc-header {
+      font-size: 7.5px;
+      color: #64748b;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .desc-text {
+      font-family: var(--font-retro);
+      font-size: 15px;
+      line-height: 1.3;
+      color: #0f172a;
+      white-space: pre-wrap;
+    }
+
+    /* Botón de Continuar Pantalla 1 */
+    .btn-continue {
+      display: none;
+      margin-top: 4px;
+      background: linear-gradient(to bottom, #22c55e, #15803d);
+      color: #ffffff;
+      border: 3px solid #052e16;
+      border-radius: 7px;
+      padding: 10px 8px;
+      font-family: var(--font-pixel);
+      font-size: 9.5px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #052e16, 0 5px 10px rgba(0,0,0,0.2);
+      animation: pulseBtn 1.8s infinite ease-in-out;
+    }
+
+    .btn-continue:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #052e16;
+    }
+
+    @keyframes pulseBtn {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    /* ==========================================================================
+       PANTALLA 2: EL ENCUENTRO Y LA PREGUNTA (BATALLA)
+       ========================================================================== */
+    #screen-battle {
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    .battle-arena {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      padding: 2px;
+    }
+
+    /* HUD de Batalla */
+    .enemy-hud {
+      align-self: flex-start;
+      background: #ffffff;
+      border: 2.5px solid #1e293b;
+      border-radius: 6px;
+      padding: 5px 8px;
+      width: 82%;
+      max-width: 250px;
+      box-shadow: 2.5px 2.5px 0 rgba(0,0,0,0.15);
+      margin-bottom: 2px;
+    }
+
+    .hud-name-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8.5px;
+      color: #0f172a;
+      margin-bottom: 3px;
+    }
+
+    .hud-level {
+      font-size: 7.5px;
+      color: #334155;
+    }
+
+    .hp-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .hp-badge {
+      font-size: 7px;
+      background: #f59e0b;
+      color: #000;
+      padding: 1px 3px;
+      border-radius: 2px;
+      font-weight: bold;
+    }
+
+    .hp-track {
+      flex: 1;
+      height: 7px;
+      background: #cbd5e1;
+      border: 1.5px solid #1e293b;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .hp-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, #22c55e, #16a34a);
+    }
+
+    /* Sprite Flotante en Batalla */
+    .battle-sprite-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin: 8px 0;
+    }
+
+    .battle-sprite-wrapper {
+      width: 105px;
+      height: 105px;
+      border-radius: 10px;
+      border: 2.5px solid #1e293b;
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      animation: floatPokemon 2.4s ease-in-out infinite alternate;
+      position: relative;
+      z-index: 2;
+    }
+
+    @keyframes floatPokemon {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-7px); }
+    }
+
+    .battle-sprite-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      image-rendering: pixelated;
+    }
+
+    .battle-platform-shadow {
+      width: 115px;
+      height: 16px;
+      background: rgba(45, 75, 48, 0.28);
+      border-radius: 50%;
+      margin-top: 3px;
+      filter: blur(1px);
+    }
+
+    /* Caja de Diálogo de Batalla */
+    .battle-dialog-box {
+      background: #ffffff;
+      border: 3px solid #1e293b;
+      border-radius: 7px;
+      padding: 9px 10px;
+      margin-bottom: 6px;
+      box-shadow: inset 1px 1px 0 #f1f5f9, 2px 2px 0 rgba(0,0,0,0.15);
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .battle-dialog-text {
+      font-size: 10px;
+      line-height: 1.45;
+      color: #0f172a;
+    }
+
+    /* Menú de Botones: PROHIBIDO agrandar el botón SÍ */
+    .battle-action-menu {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      position: relative;
+      min-height: 50px;
+      align-items: center;
+      padding: 2px 0 4px 0;
+    }
+
+    /* Botón SÍ: Tamaño fijo y proporción estricta */
+    .btn-proposal-yes {
+      background: linear-gradient(to bottom, #10b981, #047857);
+      color: #ffffff;
+      border: 3px solid #064e3b;
+      border-radius: 7px;
+      padding: 12px 6px;
+      font-family: var(--font-pixel);
+      font-size: 11px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #064e3b;
+      position: relative;
+      z-index: 10;
+      /* Mantiene tamaño fijo en todo momento */
+      transform: none !important;
+      transition: background-color 0.1s;
+    }
+
+    .btn-proposal-yes:active {
+      transform: translateY(2px) !important;
+      box-shadow: 0 1px 0 #064e3b !important;
+    }
+
+    /* Botón NO: El esquivo */
+    .btn-proposal-no {
+      background: linear-gradient(to bottom, #ef4444, #b91c1c);
+      color: #ffffff;
+      border: 3px solid #7f1d1d;
+      border-radius: 7px;
+      padding: 12px 6px;
+      font-family: var(--font-pixel);
+      font-size: 9.5px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #7f1d1d;
+      position: relative;
+      z-index: 30;
+      touch-action: none;
+      word-break: break-word;
+      line-height: 1.2;
+    }
+
+    /* ==========================================================================
+       PANTALLA 3: SECUENCIA DE CAPTURA POKÉ BALL Y ÉXITO
+       ========================================================================== */
+    #screen-capture {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      height: 100%;
+    }
+
+    .capture-stage {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .absorb-sprite-box {
+      width: 100px;
+      height: 100px;
+      border-radius: 10px;
+      border: 2.5px solid #1e293b;
+      overflow: hidden;
+      background: #fff;
+      margin-bottom: 24px;
+      transition: transform 0.6s ease-in, filter 0.6s ease-in, opacity 0.6s ease-in;
+    }
+
+    .absorb-sprite-box.absorbed {
+      transform: scale(0.04) translateY(120px);
+      filter: brightness(3) drop-shadow(0 0 15px #ef4444);
+      opacity: 0;
+    }
+
+    .absorb-sprite-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      image-rendering: pixelated;
+    }
+
+    /* Poké Ball Pixel Art Pura (24x24 SVG) */
+    .pokeball-pixel-actor {
+      width: 58px;
+      height: 58px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      z-index: 25;
+      pointer-events: none;
+    }
+
+    .pokeball-pixel-actor.throw-ball {
+      opacity: 1;
+      animation: throwBallAnim 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    @keyframes throwBallAnim {
+      0% {
+        top: 85%;
+        left: 50%;
+        transform: translate(-50%, 0) scale(0.35) rotate(0deg);
+        opacity: 1;
+      }
+      45% {
+        top: 22%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1.15) rotate(360deg);
+        opacity: 1;
+      }
+      80% {
+        top: 52%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9) rotate(720deg);
+        opacity: 1;
+      }
+      90% {
+        top: 48%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1.05) rotate(720deg);
+        opacity: 1;
+      }
+      100% {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1) rotate(720deg);
+        opacity: 1;
+      }
+    }
+
+    /* Sacudidas lentas y con tensión */
+    .pokeball-pixel-actor.wobble-left {
+      opacity: 1;
+      animation: wobbleLeftAnim 0.5s ease-in-out;
+    }
+    .pokeball-pixel-actor.wobble-right {
+      opacity: 1;
+      animation: wobbleRightAnim 0.5s ease-in-out;
+    }
+
+    @keyframes wobbleLeftAnim {
+      0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+      35% { transform: translate(-50%, -50%) rotate(-34deg); }
+      75% { transform: translate(-50%, -50%) rotate(14deg); }
+    }
+
+    @keyframes wobbleRightAnim {
+      0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+      35% { transform: translate(-50%, -50%) rotate(34deg); }
+      75% { transform: translate(-50%, -50%) rotate(-14deg); }
+    }
+
+    .pokeball-pixel-actor.captured {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.15);
+      filter: drop-shadow(0 0 16px #facc15) drop-shadow(0 0 25px #e11d48);
+      animation: captureSuccessGlow 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes captureSuccessGlow {
+      0% { transform: translate(-50%, -50%) scale(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1.22); }
+    }
+
+    .capture-status-text {
+      font-size: 9px;
+      color: #1e293b;
+      margin-top: 14px;
+      min-height: 20px;
+    }
+
+    /* Tarjeta Final de Victoria */
+    .victory-card {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding: 4px 2px;
+      animation: victoryCardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes victoryCardIn {
+      0% { opacity: 0; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .victory-badge {
+      background: #facc15;
+      color: #854d0e;
+      border: 1.5px solid #713f12;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 7.5px;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .victory-headline {
+      font-size: 10.5px;
+      line-height: 1.35;
+      color: #0f172a;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+      min-height: 26px;
+    }
+
+    .victory-photo-box {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 3px solid #e11d48;
+      overflow: hidden;
+      margin-bottom: 7px;
+      box-shadow: 0 0 0 3px #fecdd3, 0 4px 10px rgba(0,0,0,0.2);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .victory-photo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      image-rendering: pixelated;
+    }
+
+    .status-official-pill {
+      background: #e11d48;
+      color: #ffffff;
+      font-size: 7.5px;
+      padding: 3.5px 8px;
+      border-radius: 12px;
+      margin-bottom: 7px;
+      box-shadow: 0 2px 4px rgba(225, 29, 72, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .romantic-promise-card {
+      background: #ffffff;
+      border: 2px solid #334155;
+      border-radius: 7px;
+      padding: 8px;
+      margin-bottom: 8px;
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.12);
+      text-align: left;
+      width: 100%;
+    }
+
+    .romantic-promise-card p {
+      font-family: var(--font-retro);
+      font-size: 16px;
+      line-height: 1.35;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+
+    .romantic-signature {
+      font-size: 7px;
+      color: #e11d48;
+      text-align: right;
+      margin-top: 3px;
+    }
+
+    .btn-celebrate-again {
+      background: linear-gradient(to bottom, #ec4899, #be185d);
+      color: #ffffff;
+      border: 2px solid #831843;
+      border-radius: 6px;
+      padding: 9px;
+      font-family: var(--font-pixel);
+      font-size: 8.5px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #831843;
+      width: 100%;
+      margin-top: auto;
+    }
+
+    .btn-celebrate-again:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #831843;
+    }
+
+    /* ==========================================================================
+       HARDWARE POKÉDEX: CONTROLES DECORATIVOS INFERIORES
+       ========================================================================== */
+    .pokedex-bottom-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 10px 2px 10px;
+      flex-shrink: 0;
+    }
+
+    .dpad-cross {
+      width: 44px;
+      height: 44px;
+      position: relative;
+    }
+
+    .dpad-h {
+      position: absolute;
+      top: 15px;
+      left: 0;
+      width: 44px;
+      height: 14px;
+      background: #1f2937;
+      border-radius: 3px;
+      border: 1px solid #111;
+      box-shadow: 0 2px 0 #000;
+    }
+
+    .dpad-v {
+      position: absolute;
+      top: 0;
+      left: 15px;
+      width: 14px;
+      height: 44px;
+      background: #1f2937;
+      border-radius: 3px;
+      border: 1px solid #111;
+      box-shadow: 0 2px 0 #000;
+    }
+
+    .dpad-center-circle {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 12px;
+      height: 12px;
+      background: #111827;
+      border-radius: 50%;
+    }
+
+    .pill-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .pill-key {
+      width: 32px;
+      height: 8px;
+      background: #374151;
+      border-radius: 4px;
+      transform: rotate(-25deg);
+      border: 1px solid #111;
+      box-shadow: 0 2px 0 #000;
+    }
+
+    .action-circle-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .circle-key {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #1f2937;
+      border: 1.5px solid #000;
+      box-shadow: 0 2px 0 #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9ca3af;
+      font-size: 7.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       CHASIS DE LA POKÉDEX
+       ========================================================================== */
+  -->
+  <main class="pokedex-app" id="pokedexApp">
+    
+    <!-- Barra Superior de Sensores (Sin botón de mute visual) -->
+    <header class="pokedex-topbar">
+      <div class="sensors-left">
+        <div class="big-lens" aria-hidden="true"></div>
+        <div class="mini-leds" aria-hidden="true">
+          <div class="led led-red"></div>
+          <div class="led led-yellow"></div>
+          <div class="led led-green"></div>
+        </div>
+      </div>
+      <span class="pokedex-brand-label">POKÉDEX v2.1</span>
+    </header>
+
+    <!-- Marco de la Pantalla LCD -->
+    <div class="pokedex-screen-frame">
+      <div class="screen-top-indicator" aria-hidden="true">
+        <div class="bezel-dot"></div>
+        <div class="bezel-dot"></div>
+      </div>
+
+      <!-- Pantalla LCD Interna -->
+      <section class="screen-lcd" id="screenLcd">
+
+        <!-- ====================================================================
+             PANTALLA 1: FICHA DE LA POKÉDEX (POOKIE)
+             ==================================================================== -->
+        <article class="game-screen active" id="screen-pokedex">
+          
+          <!-- Encabezado Pokédex -->
+          <div class="pokedex-header-row">
+            <span class="pokedex-number" id="pokedexNumberText">No. #021</span>
+            <span class="pokedex-name" id="pokedexNameText">POOKIE</span>
+          </div>
+
+          <!-- Sprite & Metadatos Técnicos -->
+          <div class="sprite-and-meta-row">
+            <div class="sprite-box">
+              <!-- Carga de imagen local requerida: ./pookie.png -->
+              <img src="./pookie.png" alt="Pookie Sprite" class="pookie-sprite-img" id="pookieSpriteImg">
+              <span class="level-badge" id="pookieLevelBadge">Nv. 21</span>
+            </div>
+
+            <div class="meta-details">
+              <div class="meta-item">
+                <span class="meta-label">Especie</span>
+                <span class="meta-val" id="metaSpecies">Pokémon Compañero</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Tipo</span>
+                <div class="type-pill" id="metaType">🥊 LUCHA / 👻 FANTASMA</div>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Naturaleza</span>
+                <span class="meta-val" id="metaNature">Relajado</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1. DEBILIDADES (Deben mostrarse ANTES de las virtudes) -->
+          <div class="retro-card" id="debilidadesCard">
+            <div class="card-title debilidad-title">
+              <span>⚡</span> DEBILIDADES
+            </div>
+            <div class="items-container" id="debilidadesList">
+              <!-- Se escribe con efecto máquina de escribir letra por letra -->
+            </div>
+          </div>
+
+          <!-- 2. VIRTUDES -->
+          <div class="retro-card" id="virtudesCard" style="display: none;">
+            <div class="card-title virtud-title">
+              <span>⭐</span> VIRTUDES
+            </div>
+            <div class="items-container" id="virtudesList">
+              <!-- Se escribe con efecto máquina de escribir letra por letra -->
+            </div>
+          </div>
+
+          <!-- 3. DESCRIPCIÓN DE LA POKÉDEX -->
+          <div class="pokedex-description-card" id="descriptionCard" style="display: none;">
+            <div class="desc-header">
+              <span>ENTRADA DE POKÉDEX</span>
+              <span id="descPromptArrow" style="display: none;"><span class="prompt-arrow"></span></span>
+            </div>
+            <p class="desc-text" id="descriptionText"></p>
+          </div>
+
+          <!-- Botón de Continuar a Pantalla 2 -->
+          <button class="btn-continue" id="btnContinueToBattle" type="button">
+            CONTINUAR ▶
+          </button>
+        </article>
+
+        <!-- ====================================================================
+             PANTALLA 2: EL ENCUENTRO Y LA PREGUNTA (BATALLA)
+             ==================================================================== -->
+        <article class="game-screen" id="screen-battle">
+          <div class="battle-arena">
+            
+            <!-- HUD de Batalla -->
+            <div class="enemy-hud">
+              <div class="hud-name-row">
+                <span>POOKIE ♂</span>
+                <span class="hud-level">:L 21</span>
+              </div>
+              <div class="hp-bar-container">
+                <span class="hp-badge">HP</span>
+                <div class="hp-track">
+                  <div class="hp-fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sprite en Batalla -->
+            <div class="battle-sprite-stage">
+              <div class="battle-sprite-wrapper">
+                <img src="./pookie.png" alt="Pookie en Batalla">
+              </div>
+              <div class="battle-platform-shadow"></div>
+            </div>
+
+            <!-- Caja de Diálogo con Pregunta Exacta -->
+            <div class="battle-dialog-box">
+              <p class="battle-dialog-text" id="battleQuestionText"></p>
+              <span id="battlePromptArrow" style="display: none;"><span class="prompt-arrow"></span></span>
+            </div>
+
+            <!-- Menú de Elección: SÍ fijo y NO esquivo -->
+            <div class="battle-action-menu" id="battleActionMenu">
+              <button class="btn-proposal-yes" id="btnProposalYes" type="button">
+                ▶ SÍ
+              </button>
+              <button class="btn-proposal-no" id="btnProposalNo" type="button">
+                NO 🏃‍♂️
+              </button>
+            </div>
+
+          </div>
+        </article>
+
+        <!-- ====================================================================
+             PANTALLA 3: SECUENCIA DE CAPTURA POKÉ BALL Y ÉXITO
+             ==================================================================== -->
+        <article class="game-screen" id="screen-capture">
+          
+          <div class="capture-stage" id="captureAnimationStage">
+            
+            <!-- Sprite absorbiéndose -->
+            <div class="absorb-sprite-box" id="absorbSpriteBox">
+              <img src="./pookie.png" alt="Capturando a Pookie">
+            </div>
+
+            <!-- Poké Ball Pixel Art Pura (Renderizado pixelado 24x24) -->
+            <div class="pokeball-pixel-actor" id="pokeballPixelActor">
+              <svg viewBox="0 0 24 24" width="100%" height="100%" shape-rendering="crispEdges">
+                <!-- Borde Negro Pixel Art -->
+                <path d="M7 1h10v1h-10z M4 2h3v1h-3z M17 2h3v1h-3z M2 4h2v3h-2z M20 4h2v3h-2z M1 7h1v10h-1z M22 7h1v10h-1z M2 17h2v3h-2z M20 17h2v3h-2z M4 21h3v1h-3z M17 21h3v1h-3z M7 22h10v1h-10z" fill="#0f172a"/>
+                <!-- Mitad Superior Roja -->
+                <path d="M7 2h10v1h-10z M4 3h16v1h-16z M2 7h20v4h-20z M4 4h16v3h-16z" fill="#e52521"/>
+                <!-- Brillo y Sombras Rojas -->
+                <path d="M5 4h3v2h-3z M8 3h4v1h-4z" fill="#ff7260"/>
+                <path d="M18 7h3v4h-3z M16 4h4v3h-4z" fill="#9e100e"/>
+                <!-- Banda Central Negra -->
+                <path d="M1 11h22v2h-22z" fill="#0f172a"/>
+                <!-- Mitad Inferior Blanca -->
+                <path d="M2 13h20v4h-20z M4 17h16v4h-16z M7 21h10v1h-10z" fill="#ffffff"/>
+                <!-- Sombra Gris Inferior -->
+                <path d="M2 15h2v2h-2z M4 18h3v2h-3z M7 20h10v1h-10z M17 18h3v2h-3z M20 15h2v2h-2z" fill="#94a3b8"/>
+                <!-- Botón Central Pixel: Aro exterior negro -->
+                <path d="M9 9h6v6h-6z" fill="#0f172a"/>
+                <!-- Botón Central: Aro blanco -->
+                <path d="M10 10h4v4h-4z" fill="#ffffff"/>
+                <!-- Botón Central: Centro gris -->
+                <path d="M11 11h2v2h-2z" fill="#64748b" id="pokeballCenterDot"/>
+                <!-- Detalle de luz en el botón -->
+                <rect x="11" y="11" width="1" height="1" fill="#ffffff"/>
+              </svg>
+            </div>
+
+            <p class="capture-status-text" id="captureStatusText">
+              ¡Lanzando Poké Ball...!
+            </p>
+          </div>
+
+          <!-- Tarjeta Final de Victoria -->
+          <div class="victory-card" id="victoryCard">
+            <div class="victory-badge">⭐⭐⭐ ¡REGISTRO COMPLETADO! ⭐⭐⭐</div>
+            
+            <h2 class="victory-headline" id="victoryHeadlineText"></h2>
+
+            <div class="victory-photo-box">
+              <img src="./pookie.png" alt="Pookie Novio Oficial">
+            </div>
+
+            <div class="status-official-pill">
+              <span>❤️</span>
+              <span>ESTADO: En una relación oficial</span>
+            </div>
+
+            <div class="romantic-promise-card">
+              <div style="font-size: 7px; color: #64748b; margin-bottom: 5px;">
+                COMPROMISO DE NOVIOS
+              </div>
+              <p id="victoryRomanticPledge"></p>
+              <div class="romantic-signature" id="signatureDate">
+                Fecha oficial: Hoy y para siempre 💕
+              </div>
+            </div>
+
+            <button class="btn-celebrate-again" id="btnCelebrateAgain" type="button">
+              ¡CELEBRAR OTRA VEZ! 🎊
+            </button>
+          </div>
+
+        </article>
+
+      </section>
+
+      <!-- Decoración de marco -->
+      <footer class="screen-bottom-hardware">
+        <div class="red-indicator-light"></div>
+        <div class="speaker-grill">
+          <div class="speaker-line"></div>
+          <div class="speaker-line"></div>
+          <div class="speaker-line"></div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Controles decorativos físicos de la Pokédex -->
+    <div class="pokedex-bottom-controls" aria-hidden="true">
+      <div class="dpad-cross">
+        <div class="dpad-h"></div>
+        <div class="dpad-v"></div>
+        <div class="dpad-center-circle"></div>
+      </div>
+
+      <div class="pill-buttons">
+        <div class="pill-key"></div>
+        <div class="pill-key"></div>
+      </div>
+
+      <div class="action-circle-buttons">
+        <div class="circle-key">B</div>
+        <div class="circle-key">A</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==========================================================================
+       JAVASCRIPT: DATOS, MOTOR DE AUDIO CHIPTUNE Y LÓGICA RETRO
+       ========================================================================== -->
+  <script>
+    /* ==========================================================================
+       DATOS REALES DEL POKÉMON (POOKIE)
+       ========================================================================== */
+    const POOKIE_DATA = {
+      nombre: "Pookie",
+      numero: "021",
+      nivel: "21",
+      tipo: "Lucha / Fantasma",
+      naturaleza: "Relajado",
+
+      // 1. Debilidades (Deben mostrarse ANTES de las virtudes)
+      debilidades: [
+        {
+          titulo: "Fama injusta",
+          desc: "Suele ser acusado falsamente por su entrenadora favorita de ser \"mentiroso, grosero y tramador\", aunque en realidad es completamente transparente con ella."
+        },
+        {
+          titulo: "Radar descalibrado",
+          desc: "A veces es incapaz de descifrar a la primera lo que ella quiere o siente, entrando en confusión temporal si no se le habla claro."
+        },
+        {
+          titulo: "Timidez y pena pasiva",
+          desc: "De naturaleza muy callada y reservada; se apena fácilmente aunque intente disimularlo."
+        }
+      ],
+
+      // 2. Virtudes
+      virtudes: [
+        {
+          titulo: "Higiene intachable",
+          desc: "Contrario a las calumnias que ella inventa, él SÍ se baña religiosamente todos los días."
+        },
+        {
+          titulo: "Lealtad y fidelidad absoluta",
+          desc: "Efecto pasivo inquebrantable. Jamás cambia de equipo ni retrocede; su compromiso es al 100% y para siempre."
+        },
+        {
+          titulo: "Disciplina de hierro",
+          desc: "Constante con el entrenamiento, mentalidad enfocada e inteligente para resolver problemas."
+        },
+        {
+          titulo: "Compañero de Dúo",
+          desc: "Su momento favorito del día es sentarse a jugar videojuegos juntos y hacer equipo."
+        },
+        {
+          titulo: "Cuidado incondicional",
+          desc: "Siempre está dispuesto a escucharla, tratarla con amor, cuidarla y estar presente en cualquier momento."
+        },
+        {
+          titulo: "Fijación total",
+          desc: "Completamente obsesionado y cautivado por una sola persona en el mundo; no tiene ojos para nadie más."
+        }
+      ],
+
+      // 3. Descripción de Pokédex
+      descripcionPokedex: "Un espécimen reservado pero de lealtad absoluta. Aunque a veces se queda callado, no capta las indirectas a tiempo, carga con acusaciones de tramador y vive recordándole a su entrenadora que no se ha bañado (mientras que él sí lo hace), entrena duro a diario para ser su mejor versión y cuidarte siempre. Su lugar favorito en el mundo es jugar a tu lado.",
+
+      // Pregunta exacta de la propuesta
+      preguntaBatalla: "¿Quieres ser mi novia?",
+
+      // Mensaje final tras captura
+      mensajeCapturaTitulo: "¡Pookie ha sido capturado!",
+      mensajeCapturaPledge: "Prometo amarte, cuidarte, escucharte, serte fiel siempre... y recordarte que te bañes."
+    };
+
+    /* ==========================================================================
+       MOTOR DE AUDIO CHIPTUNE RETRO (BGM EN BUCLE + EFECTOS 8-BIT)
+       Reproduce automáticamente en bucle tras el primer toque en pantalla
+       ========================================================================== */
+    class PokemonChiptuneEngine {
+      constructor() {
+        this.ctx = null;
+        this.isBgmPlaying = false;
+        this.bgmTimer = null;
+        this.tempo = 104; // BPM alegre y nostálgico
+        this.stepIndex = 0;
+
+        // Melodía chiptune de Pokémon (Pallet Town / Pueblo Paleta)
+        this.melody = [
+          // Compás 1
+          { n: "G4", d: 1 }, { n: "C5", d: 1 }, { n: "E5", d: 1 }, { n: "G5", d: 1 },
+          // Compás 2
+          { n: "F5", d: 0.5 }, { n: "E5", d: 0.5 }, { n: "D5", d: 2 }, { n: null, d: 1 },
+          // Compás 3
+          { n: "F4", d: 1 }, { n: "B4", d: 1 }, { n: "D5", d: 1 }, { n: "F5", d: 1 },
+          // Compás 4
+          { n: "E5", d: 0.5 }, { n: "D5", d: 0.5 }, { n: "C5", d: 2 }, { n: null, d: 1 },
+          // Compás 5
+          { n: "A4", d: 1 }, { n: "C5", d: 1 }, { n: "E5", d: 1 }, { n: "A5", d: 1 },
+          // Compás 6
+          { n: "G5", d: 0.5 }, { n: "F5", d: 0.5 }, { n: "E5", d: 2 }, { n: null, d: 1 },
+          // Compás 7
+          { n: "D5", d: 1 }, { n: "E5", d: 0.5 }, { n: "F5", d: 0.5 }, { n: "G5", d: 1.5 }, { n: "B4", d: 0.5 },
+          // Compás 8
+          { n: "C5", d: 3 }, { n: null, d: 1 }
+        ];
+
+        // Frecuencias exactas en Hz
+        this.freqMap = {
+          "F4": 349.23, "G4": 392.00, "A4": 440.00, "B4": 493.88,
+          "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46,
+          "G5": 783.99, "A5": 880.00, "B5": 987.77
+        };
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            this.ctx = new AudioContextClass();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      startBGM() {
+        this.init();
+        if (this.isBgmPlaying || !this.ctx) return;
+        this.isBgmPlaying = true;
+        this.stepIndex = 0;
+        this.playNextBgmNote();
+      }
+
+      stopBGM() {
+        this.isBgmPlaying = false;
+        if (this.bgmTimer) {
+          clearTimeout(this.bgmTimer);
+          this.bgmTimer = null;
+        }
+      }
+
+      playNextBgmNote() {
+        if (!this.isBgmPlaying || !this.ctx) return;
+
+        const noteObj = this.melody[this.stepIndex];
+        const beatDuration = 60 / this.tempo;
+        const durationSec = noteObj.d * beatDuration;
+
+        if (noteObj.n && this.freqMap[noteObj.n]) {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(this.freqMap[noteObj.n], this.ctx.currentTime);
+
+          // Volumen suave para que acompañe de fondo
+          gain.gain.setValueAtTime(0.045, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + durationSec * 0.9);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + durationSec * 0.92);
+        }
+
+        this.stepIndex = (this.stepIndex + 1) % this.melody.length;
+        this.bgmTimer = setTimeout(() => {
+          this.playNextBgmNote();
+        }, durationSec * 1000);
+      }
+
+      // Efecto de sonido tipo blip para máquina de escribir
+      playTypeBlip() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(620, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.035, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.025);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.03);
+        } catch (e) {}
+      }
+
+      // Clic retro
+      playClick() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.05);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.06);
+        } catch (e) {}
+      }
+
+      // Esquivar botón NO
+      playDodge() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(350, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(750, this.ctx.currentTime + 0.06);
+          gain.gain.setValueAtTime(0.09, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.07);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.08);
+        } catch (e) {}
+      }
+
+      // Lanzamiento de Poké Ball
+      playThrow() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(700, this.ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.16);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.17);
+        } catch (e) {}
+      }
+
+      // Tensión de sacudida de Poké Ball
+      playWobble() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+          osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.14, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.16);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.18);
+        } catch (e) {}
+      }
+
+      // ¡Clic! de captura exitosa
+      playCaptureClick() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(987.77, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.18);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.2);
+        } catch (e) {}
+      }
+
+      // Fanfarria Pokémon oficial en 8-bits
+      playVictoryFanfare() {
+        this.stopBGM(); // Detener música de fondo para celebrar la fanfarria
+        this.init();
+        if (!this.ctx) return;
+
+        const fanfareNotes = [
+          { f: 523.25, d: 0.14, t: 0.00 }, // C5
+          { f: 523.25, d: 0.14, t: 0.15 }, // C5
+          { f: 523.25, d: 0.14, t: 0.30 }, // C5
+          { f: 523.25, d: 0.28, t: 0.45 }, // C5
+          { f: 415.30, d: 0.28, t: 0.75 }, // G#4
+          { f: 466.16, d: 0.28, t: 1.05 }, // A#4
+          { f: 523.25, d: 0.22, t: 1.35 }, // C5
+          { f: 466.16, d: 0.14, t: 1.58 }, // A#4
+          { f: 523.25, d: 0.75, t: 1.74 }  // C5 (sostenida)
+        ];
+
+        fanfareNotes.forEach(n => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(n.f, this.ctx.currentTime + n.t);
+          gain.gain.setValueAtTime(0.14, this.ctx.currentTime + n.t);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + n.t + n.d);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + n.t);
+          osc.stop(this.ctx.currentTime + n.t + n.d);
+        });
+
+        // Retomar BGM suave tras la fanfarria
+        setTimeout(() => {
+          this.startBGM();
+        }, 3000);
+      }
+    }
+
+    const audio = new PokemonChiptuneEngine();
+
+    // Iniciar audio chiptune en bucle automáticamente en el primer toque de pantalla
+    function startAudioOnFirstInteraction() {
+      audio.startBGM();
+      window.removeEventListener('pointerdown', startAudioOnFirstInteraction);
+      window.removeEventListener('touchstart', startAudioOnFirstInteraction);
+      window.removeEventListener('click', startAudioOnFirstInteraction);
+    }
+    window.addEventListener('pointerdown', startAudioOnFirstInteraction);
+    window.addEventListener('touchstart', startAudioOnFirstInteraction, { passive: true });
+    window.addEventListener('click', startAudioOnFirstInteraction);
+
+    /* ==========================================================================
+       SISTEMA DE TYPEWRITER UNIVERSAL LETRA POR LETRA
+       ========================================================================== */
+    const screenLcd = document.getElementById('screenLcd');
+
+    // Función asíncrona para escribir texto carácter por carácter
+    function typeTextAsync(targetElement, fullText, speed = 18) {
+      return new Promise((resolve) => {
+        let idx = 0;
+        targetElement.textContent = "";
+
+        function step() {
+          if (idx < fullText.length) {
+            targetElement.textContent += fullText.charAt(idx);
+            // Sonido de tipeo cada 2 caracteres
+            if (idx % 2 === 0) {
+              audio.playTypeBlip();
+            }
+            idx++;
+            // Auto scroll para seguir la lectura en iPhone
+            screenLcd.scrollTop = screenLcd.scrollHeight;
+            setTimeout(step, speed);
+          } else {
+            resolve();
+          }
+        }
+        step();
+      });
+    }
+
+    /* ==========================================================================
+       PANTALLA 1: FLUJO SECUENCIAL DE LA FICHA POKÉDEX
+       1. Debilidades (primero) -> 2. Virtudes -> 3. Descripción -> Botón Continuar
+       ========================================================================== */
+    async function runPokedexScreenSequence() {
+      // 1. Escribir Debilidades (Mostradas ANTES de las virtudes)
+      const debilidadesContainer = document.getElementById('debilidadesList');
+      debilidadesContainer.innerHTML = "";
+
+      for (let i = 0; i < POOKIE_DATA.debilidades.length; i++) {
+        const item = POOKIE_DATA.debilidades[i];
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'entry-item';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'entry-item-title';
+        titleSpan.textContent = `⚡ ${item.titulo}:`;
+
+        const descSpan = document.createElement('span');
+        descSpan.className = 'entry-item-desc';
+
+        itemDiv.appendChild(titleSpan);
+        itemDiv.appendChild(descSpan);
+        debilidadesContainer.appendChild(itemDiv);
+
+        await typeTextAsync(descSpan, item.desc, 14);
+        await new Promise(r => setTimeout(r, 120)); // Pausa entre ítems
+      }
+
+      // 2. Mostrar y Escribir Virtudes
+      const virtudesCard = document.getElementById('virtudesCard');
+      virtudesCard.style.display = 'block';
+      const virtudesContainer = document.getElementById('virtudesList');
+      virtudesContainer.innerHTML = "";
+
+      for (let i = 0; i < POOKIE_DATA.virtudes.length; i++) {
+        const item = POOKIE_DATA.virtudes[i];
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'entry-item';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'entry-item-title';
+        titleSpan.textContent = `⭐ ${item.titulo}:`;
+
+        const descSpan = document.createElement('span');
+        descSpan.className = 'entry-item-desc';
+
+        itemDiv.appendChild(titleSpan);
+        itemDiv.appendChild(descSpan);
+        virtudesContainer.appendChild(itemDiv);
+
+        await typeTextAsync(descSpan, item.desc, 14);
+        await new Promise(r => setTimeout(r, 100)); // Pausa entre ítems
+      }
+
+      // 3. Mostrar y Escribir Descripción de Pokédex
+      const descriptionCard = document.getElementById('descriptionCard');
+      descriptionCard.style.display = 'block';
+      const descriptionTextEl = document.getElementById('descriptionText');
+      const descPromptArrow = document.getElementById('descPromptArrow');
+
+      await typeTextAsync(descriptionTextEl, POOKIE_DATA.descripcionPokedex, 16);
+      descPromptArrow.style.display = 'inline-block';
+
+      // 4. Revelar botón de Continuar
+      const btnContinue = document.getElementById('btnContinueToBattle');
+      btnContinue.style.display = 'block';
+      screenLcd.scrollTop = screenLcd.scrollHeight;
+    }
+
+    /* ==========================================================================
+       TRANSICIÓN A PANTALLA 2 (BATALLA Y PREGUNTA)
+       ========================================================================== */
+    const screenPokedex = document.getElementById('screen-pokedex');
+    const screenBattle = document.getElementById('screen-battle');
+    const screenCapture = document.getElementById('screen-capture');
+
+    const btnContinueToBattle = document.getElementById('btnContinueToBattle');
+    const battleQuestionText = document.getElementById('battleQuestionText');
+    const battlePromptArrow = document.getElementById('battlePromptArrow');
+    const battleActionMenu = document.getElementById('battleActionMenu');
+
+    btnContinueToBattle.addEventListener('click', async () => {
+      audio.playClick();
+      screenPokedex.classList.remove('active');
+      screenBattle.classList.add('active');
+
+      // Escribir lentamente la pregunta exacta
+      battleActionMenu.style.display = 'none';
+      battlePromptArrow.style.display = 'none';
+      
+      await new Promise(r => setTimeout(r, 400));
+      await typeTextAsync(battleQuestionText, POOKIE_DATA.preguntaBatalla, 35);
+      
+      battlePromptArrow.style.display = 'inline-block';
+      battleActionMenu.style.display = 'grid';
+    });
+
+    /* ==========================================================================
+       LÓGICA DE BOTONES:
+       - BOTÓN SÍ: TAMAÑO FIJO Y PROPORCIÓN ESTABLE (PROHIBIDO ESCALAR O AGRANDAR)
+       - BOTÓN NO: ESQUIVO DENTRO DEL VIEWPORT VISIBLE DE iPHONE
+       ========================================================================== */
+    const btnProposalYes = document.getElementById('btnProposalYes');
+    const btnProposalNo = document.getElementById('btnProposalNo');
+
+    const noButtonPhrases = [
+      "NO 🏃‍♂️",
+      "¿Segura? 🤔",
+      "¡Error 404! 🚫",
+      "¡Ataque esquivado! 💨",
+      "¿En serio? 🥺",
+      "¡Pookie usó Protección! 🛡️",
+      "¡Opción bloqueada! 🔒",
+      "¡Intenta otra vez! 😜",
+      "¡El destino dice que SÍ! ✨"
+    ];
+    let noPhraseIndex = 0;
+
+    function dodgeNoButton(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      audio.playDodge();
+
+      // Cálculo de límites seguros dentro de la pantalla visible del iPhone
+      const btnRect = btnProposalNo.getBoundingClientRect();
+      const padding = 16;
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+
+      const safeMaxX = Math.max(padding, winW - btnRect.width - padding);
+      const safeMaxY = Math.max(padding, winH - btnRect.height - padding);
+
+      let newX = Math.floor(Math.random() * (safeMaxX - padding)) + padding;
+      let newY = Math.floor(Math.random() * (safeMaxY - padding)) + padding;
+
+      // Asegurar que no se quede pegado en la misma posición
+      if (Math.abs(newX - btnRect.left) < 60) {
+        newX = (newX + 110) % safeMaxX;
+      }
+      if (Math.abs(newY - btnRect.top) < 40) {
+        newY = (newY + 80) % safeMaxY;
+      }
+
+      btnProposalNo.style.position = 'fixed';
+      btnProposalNo.style.left = `${newX}px`;
+      btnProposalNo.style.top = `${newY}px`;
+      btnProposalNo.style.zIndex = '9999';
+
+      // Cambiar texto a una frase cómica
+      noPhraseIndex = (noPhraseIndex + 1) % noButtonPhrases.length;
+      btnProposalNo.textContent = noButtonPhrases[noPhraseIndex];
+
+      // ¡IMPORTANTE! El botón SÍ se mantiene 100% fijo sin escalar.
+    }
+
+    btnProposalNo.addEventListener('mouseover', dodgeNoButton);
+    btnProposalNo.addEventListener('mouseenter', dodgeNoButton);
+    btnProposalNo.addEventListener('touchstart', dodgeNoButton, { passive: false });
+    btnProposalNo.addEventListener('pointerdown', dodgeNoButton);
+    btnProposalNo.addEventListener('click', dodgeNoButton);
+
+    /* ==========================================================================
+       PANTALLA 3: SECUENCIA DE CAPTURA LENTA Y CON TENSIÓN
+       ========================================================================== */
+    const pokeballPixelActor = document.getElementById('pokeballPixelActor');
+    const absorbSpriteBox = document.getElementById('absorbSpriteBox');
+    const captureStatusText = document.getElementById('captureStatusText');
+    const victoryCard = document.getElementById('victoryCard');
+    const victoryHeadlineText = document.getElementById('victoryHeadlineText');
+    const victoryRomanticPledge = document.getElementById('victoryRomanticPledge');
+    const btnCelebrateAgain = document.getElementById('btnCelebrateAgain');
+
+    btnProposalYes.addEventListener('click', () => {
+      audio.playClick();
+      screenBattle.classList.remove('active');
+      screenCapture.classList.add('active');
+
+      audio.playThrow();
+      captureStatusText.textContent = "¡Lanzando Poké Ball...!";
+
+      // 1. Lanzar Poké Ball
+      pokeballPixelActor.className = 'pokeball-pixel-actor throw-ball';
+
+      // 2. Absorber Pookie en la Poké Ball
+      setTimeout(() => {
+        absorbSpriteBox.classList.add('absorbed');
+        captureStatusText.textContent = "¡Pookie está dentro de la Poké Ball!";
+      }, 480);
+
+      // 3. Tensión y sacudidas lentas con pausas dramáticas
+      // Sacudida 1 (Izquierda)
+      setTimeout(() => {
+        captureStatusText.textContent = "Sacudiéndose... (1)";
+        pokeballPixelActor.className = 'pokeball-pixel-actor wobble-left';
+        audio.playWobble();
+      }, 1500);
+
+      // Pausa tensa -> Sacudida 2 (Derecha)
+      setTimeout(() => {
+        captureStatusText.textContent = "Sacudiéndose... (2)";
+        pokeballPixelActor.className = 'pokeball-pixel-actor wobble-right';
+        audio.playWobble();
+      }, 2900); // 1.4s de pausa
+
+      // Pausa dramática prolongada -> Sacudida 3 (Izquierda)
+      setTimeout(() => {
+        captureStatusText.textContent = "Sacudiéndose... (3)";
+        pokeballPixelActor.className = 'pokeball-pixel-actor wobble-left';
+        audio.playWobble();
+      }, 4300); // 1.4s de pausa
+
+      // Pausa máxima de tensión antes del ¡CLIC!
+      setTimeout(async () => {
+        audio.playCaptureClick();
+        pokeballPixelActor.className = 'pokeball-pixel-actor captured';
+        captureStatusText.innerHTML = "✨ <strong>¡CLIC! ¡ATRAPADO!</strong> ✨";
+
+        // Fanfarria oficial de victoria y estallido de confeti
+        setTimeout(() => {
+          audio.playVictoryFanfare();
+          launchTriumphantConfetti();
+        }, 350);
+
+        // Mostrar tarjeta final y escribir mensajes letra por letra
+        setTimeout(async () => {
+          document.getElementById('captureAnimationStage').style.display = 'none';
+          victoryCard.style.display = 'flex';
+
+          // Escribir titular letra por letra
+          await typeTextAsync(victoryHeadlineText, POOKIE_DATA.mensajeCapturaTitulo, 25);
+          // Escribir promesa romántica letra por letra
+          await typeTextAsync(victoryRomanticPledge, POOKIE_DATA.mensajeCapturaPledge, 22);
+
+          // Configurar fecha oficial de hoy
+          const hoy = new Date();
+          const opciones = { day: 'numeric', month: 'long', year: 'numeric' };
+          document.getElementById('signatureDate').textContent = `Fecha oficial: ${hoy.toLocaleDateString('es-ES', opciones)} 💕`;
+        }, 1600);
+
+      }, 5900); // Pausa dramática de 1.6s tras la tercera sacudida
+    });
+
+    /* ==========================================================================
+       CONFETI DE CELEBRACIÓN (CANVAS-CONFETTI)
+       ========================================================================== */
+    function launchTriumphantConfetti() {
+      if (typeof confetti !== 'function') return;
+
+      const duration = 3.5 * 1000;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#e11d48', '#facc15', '#38bdf8', '#4ade80', '#ffffff'];
+
+      (function frame() {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors
+        });
+
+        if (Date.now() < animationEnd) {
+          requestAnimationFrame(frame);
+        }
+      }());
+
+      confetti({
+        particleCount: 80,
+        spread: 100,
+        origin: { y: 0.6 },
+        colors: ['#e11d48', '#ff758f', '#ffffff', '#ffd700']
+      });
+    }
+
+    btnCelebrateAgain.addEventListener('click', () => {
+      audio.playClick();
+      audio.playVictoryFanfare();
+      launchTriumphantConfetti();
+    });
+
+    /* ==========================================================================
+       INICIO DE LA APLICACIÓN
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      runPokedexScreenSequence();
+    });
+  </script>
+</body>
+</html>
